@@ -1,0 +1,83 @@
+% ---------------------------------------------------------------------------
+% Bibliography of the thesis.
+% Cite with \cite{key}. Entries marked "VERIFY" must be checked against the
+% publisher's page (DOI, pages) before submission.
+% ---------------------------------------------------------------------------
+
+% --- Refactoring ------------------------------------------------------------
+
+@book{Fowler2018,
+  author    = {Martin Fowler},
+  title     = {Refactoring: Improving the Design of Existing Code},
+  edition   = {2nd},
+  publisher = {Addison-Wesley},
+  year      = {2018}
+}
+
+@article{MensTourwe2004,
+  author  = {Tom Mens and Tom Tourw{\'e}},
+  title   = {A Survey of Software Refactoring},
+  journal = {IEEE Transactions on Software Engineering},
+  volume  = {30},
+  number  = {2},
+  pages   = {126--139},
+  year    = {2004},
+  doi     = {10.1109/TSE.2004.1265817}
+}
+
+% --- Empirical studies of GitHub Actions --------------------------------------
+
+@inproceedings{Kinsman2021,
+  author    = {Timothy Kinsman and Mairieli Wessel and Marco A. Gerosa and Christoph Treude},
+  title     = {How Do Software Developers Use {GitHub Actions} to Automate Their Workflows?},
+  booktitle = {Proceedings of the 18th International Conference on Mining Software Repositories (MSR)},
+  pages     = {420--431},
+  year      = {2021},
+  publisher = {IEEE}
+}
+% ^ VERIFY pages/DOI
+
+@inproceedings{Decan2022,
+  author    = {Alexandre Decan and Tom Mens and Pooya Rostami Mazrae and Mehdi Golzadeh},
+  title     = {On the Use of {GitHub Actions} in Software Development Repositories},
+  booktitle = {Proceedings of the IEEE International Conference on Software Maintenance and Evolution (ICSME)},
+  pages     = {235--245},
+  year      = {2022},
+  publisher = {IEEE}
+}
+% ^ VERIFY pages/DOI
+
+% --- Official documentation (grey literature) --------------------------------
+
+@misc{GHDocsReuse,
+  author       = {{GitHub}},
+  title        = {Reusing workflow configurations},
+  howpublished = {GitHub Docs, \url{https://docs.github.com/actions/reference/workflows-and-actions/reusing-workflow-configurations}},
+  note         = {Accessed 15 October 2026},
+  year         = {2026}
+}
+
+% VERIFY URL of the entry below
+@misc{GHDocsComposite,
+  author       = {{GitHub}},
+  title        = {Creating a composite action},
+  howpublished = {GitHub Docs, \url{https://docs.github.com/actions/sharing-automations/creating-actions/creating-a-composite-action}},
+  note         = {Accessed 15 October 2026},
+  year         = {2026}
+}
+
+@misc{GHChangelogAnchors2025,
+  author       = {{GitHub}},
+  title        = {Actions {YAML} anchors and non-public workflow templates},
+  howpublished = {GitHub Changelog, \url{https://github.blog/changelog/2025-09-18-actions-yaml-anchors-and-non-public-workflow-templates/}},
+  month        = sep,
+  year         = {2025},
+  note         = {Accessed 15 October 2026}
+}
+
+@misc{YAML122,
+  author       = {{YAML Language Development Team}},
+  title        = {{YAML} Ain't Markup Language ({YAML}) Version 1.2.2},
+  howpublished = {\url{https://yaml.org/spec/1.2.2/}},
+  year         = {2021}
+}

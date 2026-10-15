@@ -1,0 +1,275 @@
+% Master's thesis -- UMONS, Faculté des Sciences
+% Based on the UMONS master's thesis template (A. Buys), converted to UTF-8 and English.
+\documentclass[a4paper,11pt,notitlepage]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx} % Times, as in the UMONS template
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage[vmargin=2.6cm,hmargin=2.9cm]{geometry}
+\usepackage{indentfirst}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ---------------------------------------------------------------------------
+% YAML listings
+% ---------------------------------------------------------------------------
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null},
+  comment=[l]{\#},
+  morestring=[b]', morestring=[b]",
+  sensitive=true
+}
+\lstset{
+  language=yaml,
+  basicstyle=\ttfamily\scriptsize,
+  columns=fullflexible,
+  keepspaces=true,
+  numbers=left, numberstyle=\tiny\color{gray},
+  frame=single, rulecolor=\color{gray!50},
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{teal!70!black},
+  breaklines=true,
+  showstringspaces=false,
+  captionpos=b
+}
+% Path to the exemplar workflows (shared with the test suite)
+\newcommand{\ex}[1]{../examples/#1}
+
+% ---------------------------------------------------------------------------
+% Title page
+% ---------------------------------------------------------------------------
+\pagestyle{myheadings}
+
+\newcommand{\STitre}{UNIVERSIT\'E DE MONS}
+\newcommand{\FTitre}{FACULT\'E DES SCIENCES}
+\newcommand{\Titre}{A Refactoring Tool for GitHub Actions Workflows}
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+\newtheorem{exa}{Example}
+
+\title{
+  \begin{minipage}\linewidth\centering
+  \LARGE\bf\STitre
+  \vskip20pt
+  \Large\bf\FTitre
+  \vskip20pt
+  \Huge \Titre
+  \end{minipage}
+}
+\author{Abdellah BOUMAIZA\\[1.5ex]
+Master en Sciences Informatiques\\[1.5ex]
+{\tt \small abdellah.boumaiza@student.umons.ac.be} % TODO check e-mail
+}
+\date{Academic year 2026--2027}
+
+\begin{document}
+
+\maketitle
+\markright{\Titre}
+\thispagestyle{empty}
+
+\vfill
+\begin{quote}
+Master's thesis carried out in the \textbf{Software Engineering Lab}, % TODO exact service name
+as part of the \textbf{Master en Sciences Informatiques}.
+\end{quote}
+\begin{quote}
+\textbf{Supervisor:} Prof.\ Tom MENS \\
+\textbf{Co-supervisor:} Aref TALEBZADEH BARDSIRI
+\end{quote}
+\vfill
+
+\includegraphics[width=0.2\textwidth]{img/FS.pdf}\hfill\includegraphics[width=0.2\textwidth]{img/logo_UMONS.pdf}
+
+\newpage
+The author, Abdellah BOUMAIZA, declares having complied with the ethical rules in force,
+including the University's charter on the use of Artificial Intelligence.
+
+\section*{Use of AI tools}
+% TODO: describe honestly which tools were used and for what. Example:
+Generative AI tools (Claude, Anthropic) were used to help structure the document,
+draft the \LaTeX{} skeleton and continuous-integration workflow of this repository,
+propose a first version of the refactoring exemplars, and rephrase parts of the text.
+All content was reviewed, checked against the cited sources and is the responsibility of the author.
+
+\newpage
+\tableofcontents
+\newpage
+
+\setlength{\parindent}{12pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
+% ===========================================================================
+\chapter*{Introduction}\addcontentsline{toc}{chapter}{Introduction}
+\label{ch:intro}
+% ===========================================================================
+
+% TODO: paste/adapt the first text sent to the supervisor here.
+
+GitHub Actions has become the dominant continuous-integration and automation service
+for repositories hosted on GitHub~\cite{Decan2022,Kinsman2021}.
+Workflows are YAML files that tend to grow and to be duplicated within and across
+repositories. As for source code, this duplication hampers maintenance and can be
+addressed by \emph{refactoring}, i.e., behaviour-preserving transformations that improve
+the structure of an artefact~\cite{Fowler2018,MensTourwe2004}.
+
+This thesis focuses on refactorings that improve \emph{reuse} in workflows.
+Its goals are (i) to catalogue the reuse mechanisms offered by GitHub Actions and the
+refactorings they enable (\cref{ch:mechanisms,ch:catalogue}),
+and (ii) to build a tool that detects refactoring opportunities and applies them automatically.
+
+% ===========================================================================
+\chapter{Reuse mechanisms in GitHub Actions}
+\label{ch:mechanisms}
+% ===========================================================================
+
+GitHub Actions offers several mechanisms to avoid duplicating workflow
+configuration~\cite{GHDocsReuse}. They differ in the \emph{granularity} of what is reused
+(a YAML node, a sequence of steps, a job, a whole workflow), in their \emph{scope}
+(one file, one repository, an organisation, the whole platform) and in the moment at which
+reuse happens (parse time, run time, or creation time).
+\Cref{tab:mechanisms} summarises them.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lXXl@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Reused unit} & \textbf{Scope} & \textbf{When}\\
+\midrule
+YAML anchors/aliases~\cite{GHChangelogAnchors2025,YAML122} & any YAML node & one file & parse time\\
+Composite action~\cite{GHDocsComposite} & sequence of steps & repo / public & run time\\
+JavaScript / Docker action & one step (custom code) & repo / public & run time\\
+Reusable workflow & one or more jobs & repo / org / public & run time\\
+Workflow template~\cite{GHChangelogAnchors2025} & whole workflow file & organisation & creation time\\
+Matrix strategy & one job, parametrised & one job & run time\\
+Chained workflows (\texttt{workflow\_run}) & a set of jobs & one repository & run time\\
+\bottomrule
+\end{tabularx}
+\caption{Reuse mechanisms available in GitHub Actions.}
+\label{tab:mechanisms}
+\end{table}
+
+% TODO: one section per mechanism (syntax, constraints, limits).
+
+% ===========================================================================
+\chapter{A catalogue of reuse refactorings}
+\label{ch:catalogue}
+% ===========================================================================
+
+Each refactoring is illustrated by a pair of artificial but realistic workflows
+(\emph{before} / \emph{after}) stored in the \texttt{examples/} folder of the repository.
+These exemplars form a small ground truth: they document the catalogue and will serve as a
+test suite for the refactoring tool. All of them are validated by
+\texttt{actionlint}, and, where the refactoring is a pure syntactic rewriting,
+an automatic equivalence check is provided (\texttt{examples/check.py}).
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Id} & \textbf{Refactoring} & \textbf{Strictly behaviour-preserving?}\\
+\midrule
+R1 & Extract Composite Action & yes\\
+R2 & Extract Reusable Workflow & yes (modulo UI/log structure)\\
+R3 & Introduce YAML Anchors & yes (identical after alias expansion)\\
+R4 & Extract Workflow Template & yes for the instantiated file; no propagation\\
+R5 & Split Workflow (\texttt{workflow\_run}) & no: default-branch version, security context\\
+R6 & Introduce Matrix & yes with \texttt{fail-fast: false}; job ids change\\
+\bottomrule
+\end{tabularx}
+\caption{Refactorings of the catalogue.}
+\label{tab:catalogue}
+\end{table}
+
+% ---------------------------------------------------------------------------
+\section{R1 -- Extract Composite Action}\label{sec:r1}
+
+\textbf{Smell.} The same sequence of steps is repeated in several jobs.
+\textbf{Mechanism.} Composite action~\cite{GHDocsComposite}.
+
+\lstinputlisting[caption={R1, before: three jobs repeat the Node setup.},label=lst:r1-before]{\ex{R1-extract-composite-action/before/.github/workflows/ci.yml}}
+\lstinputlisting[caption={R1, after: extracted composite action.}]{\ex{R1-extract-composite-action/after/.github/actions/setup-node-project/action.yml}}
+\lstinputlisting[caption={R1, after: the workflow calls the local action.}]{\ex{R1-extract-composite-action/after/.github/workflows/ci.yml}}
+
+\textbf{Pitfalls.} \texttt{run} steps must declare a \texttt{shell}; a local action is only
+available after \texttt{actions/checkout}; job-level keys (\texttt{runs-on},
+\texttt{services}, \texttt{permissions}) cannot be extracted.
+
+% ---------------------------------------------------------------------------
+\section{R2 -- Extract Reusable Workflow}\label{sec:r2}
+
+\textbf{Smell.} The same \emph{job} is duplicated in several workflows.
+\textbf{Mechanism.} Reusable workflow (\texttt{on: workflow\_call})~\cite{GHDocsReuse}.
+
+\lstinputlisting[caption={R2, before: staging deployment (production is identical up to 5 values).}]{\ex{R2-extract-reusable-workflow/before/.github/workflows/deploy-staging.yml}}
+\lstinputlisting[caption={R2, after: the reusable workflow.}]{\ex{R2-extract-reusable-workflow/after/.github/workflows/_deploy.yml}}
+\lstinputlisting[caption={R2, after: a caller.}]{\ex{R2-extract-reusable-workflow/after/.github/workflows/deploy-staging.yml}}
+
+% ---------------------------------------------------------------------------
+\section{R3 -- Introduce YAML Anchors}\label{sec:r3}
+
+\textbf{Smell.} Repeated YAML nodes \emph{within one file}.
+\textbf{Mechanism.} YAML anchors and aliases~\cite{YAML122}, supported by GitHub Actions
+since September 2025~\cite{GHChangelogAnchors2025}.
+
+\lstinputlisting[caption={R3, after (the \emph{before} version, with the three blocks inlined three times, is in the repository).}]{\ex{R3-introduce-yaml-anchors/after/.github/workflows/python-ci.yml}}
+
+\textbf{Remark.} Anchors are expanded at parse time, so behaviour preservation can be checked
+mechanically by comparing the parsed documents. Anchors are file-local and not parametrisable.
+
+% ---------------------------------------------------------------------------
+\section{R4 -- Extract Workflow Template}\label{sec:r4}
+
+\textbf{Smell.} The same workflow file is copy-pasted across repositories of an organisation.
+\textbf{Mechanism.} Organisation workflow template, possibly in a non-public
+\texttt{.github} repository since 2025~\cite{GHChangelogAnchors2025}.
+
+\lstinputlisting[caption={R4, the template (\texttt{\$default-branch} is a placeholder).}]{\ex{R4-extract-workflow-template/after/org-dotgithub/workflow-templates/java-maven-ci.yml}}
+\lstinputlisting[caption={R4, template metadata.},language={}]{\ex{R4-extract-workflow-template/after/org-dotgithub/workflow-templates/java-maven-ci.properties.json}}
+
+\textbf{Remark.} Unlike R1--R3, a template is \emph{copied} at creation time: duplication is
+standardised rather than removed, and later changes are not propagated.
+Combining R4 with R2 (a template that only calls a reusable workflow) gives both.
+
+% ---------------------------------------------------------------------------
+\section{R5 -- Split Workflow}\label{sec:r5}
+
+\textbf{Smell.} A long sequential workflow mixes several concerns.
+\textbf{Mechanism.} Two regular workflows chained with the \texttt{workflow\_run} event.
+
+\lstinputlisting[caption={R5, before.}]{\ex{R5-split-workflow/before/.github/workflows/ci-and-docs.yml}}
+\lstinputlisting[caption={R5, after: the second workflow.}]{\ex{R5-split-workflow/after/.github/workflows/docs.yml}}
+
+\textbf{Remark.} This refactoring is \emph{not} strictly behaviour-preserving: the triggered
+workflow always uses the default-branch version of its file and runs in a privileged context,
+even for runs triggered by pull requests from forks.
+
+% ---------------------------------------------------------------------------
+\section{R6 -- Introduce Matrix}\label{sec:r6}
+
+\textbf{Smell.} Jobs that differ only by a few values.
+\textbf{Mechanism.} \texttt{strategy.matrix}.
+
+\lstinputlisting[caption={R6, after (the \emph{before} version contains nine near-identical jobs).}]{\ex{R6-introduce-matrix/after/.github/workflows/tests.yml}}
+
+% ===========================================================================
+\chapter{Conclusion}\label{ch:conclusion}
+% ===========================================================================
+
+% TODO
+
+% ===========================================================================
+\bibliographystyle{plain}
+\bibliography{references}
+\addcontentsline{toc}{chapter}{Bibliography}
+
+\end{document}
